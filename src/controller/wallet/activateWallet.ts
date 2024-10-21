@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { ActiveWallets, WALLETS, state } from "../../lib/state";
+import { ActiveWallets, WalletsState, state } from "../../lib/state";
 
 export async function activateWallet(
   userId: number,
@@ -10,7 +10,7 @@ export async function activateWallet(
   const lastUpdated = new Date().getTime();
 
   if (!currentUserState?.activateWallet) {
-    const cacheWallets = WALLETS.get(userId)?.wallets;
+    const cacheWallets = WalletsState.get(userId)?.wallets;
     const wallets =
       cacheWallets ||
       (await prisma.wallet.findMany({
@@ -21,8 +21,14 @@ export async function activateWallet(
           mnemonic: true,
         },
       }));
+    if (wallets.length === 0) {
+      sendMessage(
+        "You don't have any wallet yet please add one.\n\n/create or /import"
+      );
+      return;
+    }
     let message = wallets.reduce((prev, curr) => {
-      prev += `Name: ${curr.name}\nPublicKey: ${curr.publicKey}`;
+      prev += `Name: ${curr.name}\nPublicKey: ${curr.publicKey}\n\n`;
       return prev;
     }, "Enter the serial number wallet you want to activate\n\n");
     state.set(userId, {
@@ -66,8 +72,9 @@ export async function activateWallet(
     }
     ActiveWallets.set(userId, activeWallet);
     state.delete(userId);
+    sendMessage(`Active Wallet: ${activeWallet.publicKey}`, true);
     sendMessage(
-      `Wallet naming ${activateWallet.name} is active now you can running commands like:\n\n/balance - Get current balance\n/tokens - Get all tokens & their balance`
+      `Wallet naming ${activeWallet.name} is active now you can running commands like:\n\n/balance - Get current balance\n/tokens - Get all tokens & their balance\n/swap - To swap tokens`
     );
   }
 }

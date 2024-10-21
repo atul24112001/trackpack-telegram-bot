@@ -5,7 +5,8 @@ import { state } from "../../lib/state";
 export async function importMnemonic(
   userId: number,
   text: string,
-  sendMessage: (message: string) => void
+  sendMessage: (message: string) => void,
+  secret: string
 ) {
   try {
     const currentUserState = state.get(userId);
@@ -45,7 +46,9 @@ export async function importMnemonic(
       data: {
         userId,
         name,
-        mnemonic: JSON.stringify(encryptMessage(mnemonicArray.join(" "))),
+        mnemonic: JSON.stringify(
+          encryptMessage(mnemonicArray.join(" "), secret)
+        ),
       },
     });
     if (currentUserState) {

@@ -8,9 +8,23 @@ import {
   listMnemonic,
 } from "./controller/mnemonic";
 import { listWallets, createWallet } from "./controller/wallet";
-import { ActiveWallets, WALLETS, state } from "./lib/state";
+import {
+  ActiveWallets,
+  Passwords,
+  Swaps,
+  WalletsState,
+  state,
+} from "./lib/state";
 import cron from "node-cron";
 import { activateWallet } from "./controller/wallet/activateWallet";
+import { checkBalance } from "./controller/wallet/active-wallet/balance";
+import { getTokens } from "./controller/wallet/active-wallet/tokens";
+import { inlineKeyboard } from "telegraf/typings/markup";
+import { swap } from "./controller/wallet/active-wallet";
+import {
+  InlineKeyboardButton,
+  InlineKeyboardMarkup,
+} from "telegraf/typings/core/types/typegram";
 
 config();
 
@@ -32,18 +46,51 @@ bot.start(async (ctx) => {
   }
 
   ctx.reply(
-    `Hello ${userExist.firstName}, how can i help you ?? Type /help to know more`
+    `Hello ${userExist.firstName}, how can i help you ?? please enter /help to know more.`
   );
+});
+
+const commands: { [key: string]: string | { [key: string]: string } } = {
+  list: "Lists all the wallets that you have created/imported",
+  create: "To create a new wallet",
+  import: "To import a wallet using mnemonic",
+  importmnemonic: "To import your mnemonic",
+  createmnemonic: "To create a new mnemonic for you",
+  mnemonics: "Lists all the mnemonics that you have added",
+  activate: "Activate one of created wallet",
+  wallet: {
+    balance: "Check balance in activate wallet",
+    tokens: "Lists tokens/coins in active",
+    swap: "Swap tokens",
+  },
+};
+
+bot.on("callback_query", (ctx) => {
+  //@ts-ignore
+  const callbackData = ctx.callbackQuery.data;
+  const userId = ctx.callbackQuery.from.id;
+  ctx.sendMessage(callbackData);
 });
 
 bot.on(message("text"), async (ctx) => {
   if (ctx.from.is_bot) {
+    console.log("From bot ", ctx.text);
     return;
   }
-  const text = ctx.message.text.trim().split(" ")[0];
+
+  const textArray = ctx.message.text
+    .trim()
+    .split(" ")
+    .filter((word) => word.trim() !== "");
+  let text = textArray[0];
+  if (text === "@TrackpackDevBot") {
+    text = textArray[1];
+  }
+
   const userId = ctx.from.id;
   const lastUpdated = new Date().getTime();
-
+  const _activateWallet = ActiveWallets.get(userId);
+  const password = Passwords.get(userId);
   const currentUserState = state.get(userId) || {
     creatingWallet: null,
     importMnemonics: null,
@@ -52,50 +99,100 @@ bot.on(message("text"), async (ctx) => {
     creatingMnemonic: null,
   };
 
-  function reply(message: string, pin?: boolean) {
-    ctx.reply(message).then((message) => {
-      if (pin) {
-        ctx.pinChatMessage(message.message_id);
-      }
+  if (ctx.text === "/cancel") {
+    state.set(userId, {
+      creatingWallet: null,
+      importMnemonics: null,
+      lastUpdated,
+      mnemonics: null,
+      creatingMnemonic: null,
     });
+
+    Passwords.delete(userId);
+    ActiveWallets.delete(userId);
+    Swaps.delete(userId);
+    reply("Reset successful");
+    return;
+  }
+
+  if (currentUserState.enteringPassword) {
+    if (text.trim().length < 8) {
+      reply("Password length should be more than equals to 8");
+      return;
+    }
+    Passwords.set(userId, {
+      lastUpdated: new Date().getTime(),
+      password: text.trim(),
+    });
+    state.delete(userId);
+    await ctx.deleteMessage(ctx.message.message_id);
+    reply("Welcome");
+    return;
+  }
+  if (!password) {
+    state.set(userId, {
+      ...currentUserState,
+      enteringPassword: true,
+    });
+
+    reply(
+      "Please enter the password first\n\nNote: Password that will encrypt all your private key, if you forget your password you won't be able to decrypt your private key as we don't save your password nor verify it."
+    );
+    return;
+  }
+
+  if (!_activateWallet) {
+    await ctx.unpinAllChatMessages();
+  }
+
+  function reply(
+    message: string,
+    pin?: boolean,
+    buttons?: InlineKeyboardButton[][]
+  ) {
+    ctx
+      .reply(message, {
+        reply_markup: {
+          inline_keyboard: buttons || [[]],
+        },
+      })
+      .then((message) => {
+        if (pin) {
+          ctx.pinChatMessage(message.message_id);
+        }
+      });
   }
 
   if (currentUserState?.importMnemonics) {
-    await importMnemonic(userId, text, reply);
+    await importMnemonic(userId, ctx.text, reply, password.password);
     return;
   }
 
   if (currentUserState?.creatingMnemonic) {
-    await createMnemonic(userId, text, reply);
+    await createMnemonic(userId, ctx.text, reply, password.password);
 
     return;
   }
 
   if (currentUserState?.creatingWallet) {
-    await createWallet(userId, text, reply);
+    await createWallet(userId, ctx.text, reply, password.password);
     return;
   }
 
   if (text === "/create") {
-    if (
-      !currentUserState ||
-      !currentUserState.creatingWallet ||
-      !currentUserState.creatingWallet.name
-    ) {
-      state.set(userId, {
-        creatingWallet: {
-          name: null,
-          network: null,
-          type: null,
-          mnemonic: null,
-        },
-        importMnemonics: null,
-        creatingMnemonic: null,
-        lastUpdated,
-        mnemonics: currentUserState?.mnemonics || null,
-      });
-      ctx.reply("To create a new wallet, first give your wallet a name");
-    }
+    state.set(userId, {
+      creatingWallet: {
+        name: null,
+        network: null,
+        type: null,
+        mnemonic: null,
+      },
+      importMnemonics: null,
+      creatingMnemonic: null,
+      lastUpdated,
+      mnemonics: currentUserState?.mnemonics || null,
+    });
+    ctx.reply("To create a new wallet, first give your wallet a name");
     return;
   }
   if (text === "/list") {
@@ -131,30 +228,38 @@ bot.on(message("text"), async (ctx) => {
     return;
   }
   if (text === "/mnemonics") {
-    await listMnemonic(userId, text, reply);
+    await listMnemonic(userId, text, reply, password.password);
     return;
   }
 
   if (text === "/balance") {
-    const _activateWallet = ActiveWallets.get(userId);
-    if (!_activateWallet) {
-      reply("There is not active wallet currently please try /activate");
-      return;
-    }
+    await checkBalance(userId, text, reply);
     return;
   }
 
   if (text === "/tokens") {
-    const _activateWallet = ActiveWallets.get(userId);
-    if (!_activateWallet) {
-      reply("There is not active wallet currently please try /activate");
-      return;
-    }
+    await getTokens(userId, text, reply);
     return;
   }
+
+  if (text === "/swap" || currentUserState.swapping) {
+    await swap(userId, text, reply, password.password);
+    return;
+  }
+
   ctx.reply(
-    `This are the command you can user:\n/list This will list all the wallets that you have created\n/create This will create a new wallet\n/import This will import a wallet using mnemonic\n/import_mnemonic This will import mnemonic
-/create_mnemonic This is create a new mnemonic for you\n/mnemonics List all the mnemonics that you have added`
+    Object.keys(commands).reduce((prev, command) => {
+      const details = commands[command];
+      if (typeof details === "string") {
+        prev += `/${command}: ${commands[command]}\n`;
+      } else {
+        prev += Object.keys(details).reduce((p, c) => {
+          p += `/${c}: ${details[c]}\n`;
+          return p;
+        }, "\n These are the commands you can use after a wallet is active.\n\n");
+      }
+      return prev;
+    }, `This are the command you can use:\n\n`)
   );
 });
 
@@ -165,15 +270,20 @@ process.once("SIGTERM", () => bot.stop("SIGTERM"));
 
 cron.schedule("0 * * * *", () => {
   console.log("Running the task every hour:", new Date().toLocaleString());
-  const currentTime = new Date().getTime() - 3600000;
+  const currentTime = new Date().getTime();
   state.forEach((value, key) => {
-    if (value.lastUpdated < currentTime) {
+    if (value.lastUpdated < currentTime - 3600000) {
       state.delete(key);
     }
   });
-  WALLETS.forEach((value: any, key) => {
-    if (value.lastUpdater < currentTime) {
-      WALLETS.delete(key);
+  WalletsState.forEach((value: any, key) => {
+    if (value.lastUpdater < currentTime - 3600000) {
+      WalletsState.delete(key);
+    }
+  });
+  Passwords.forEach((value: any, key) => {
+    if (value.lastUpdater < currentTime - 3600000) {
+      Passwords.delete(key);
     }
   });
 });

@@ -1,4 +1,4 @@
-import { Mnemonic, Network, Wallet, WalletType } from "@prisma/client";
+import { Mnemonic, Network, User, Wallet, WalletType } from "@prisma/client";
 
 export const state = new Map<
   number,
@@ -23,6 +23,20 @@ export const state = new Map<
       wallets: number[];
       target: number;
     };
+    swapping?: {
+      sellingToken: null | {
+        address: string;
+        name: string;
+        decimals: number;
+      };
+      swapWith: null | {
+        address: string;
+        name: string;
+        decimals: number;
+      };
+      amount: null | number;
+    };
+    enteringPassword?: boolean;
   }
 >();
 
@@ -30,7 +44,7 @@ interface WalletModel extends Wallet {
   mnemonic: Mnemonic;
 }
 
-export const WALLETS = new Map<
+export const WalletsState = new Map<
   number,
   {
     wallets: WalletModel[];
@@ -39,3 +53,18 @@ export const WALLETS = new Map<
 >();
 
 export const ActiveWallets = new Map<number, WalletModel>();
+export const ActiveToken = new Map<number, string>();
+export const Swaps = new Map<
+  number,
+  {
+    lastUpdated: number;
+    data: any;
+  }
+>();
+export const Passwords = new Map<
+  number,
+  {
+    lastUpdated: number;
+    password: string;
+  }
+>();

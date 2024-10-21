@@ -1,12 +1,12 @@
 import { prisma } from "../../lib/db";
-import { WALLETS } from "../../lib/state";
+import { WalletsState } from "../../lib/state";
 
 export async function listWallets(
   userId: number,
   sendMessage: (message: string) => void
 ) {
   try {
-    let cacheWallets = WALLETS.get(userId)?.wallets;
+    let cacheWallets = WalletsState.get(userId)?.wallets;
     if (!cacheWallets) {
       console.log("Fetching");
       cacheWallets = await prisma.wallet.findMany({
@@ -17,7 +17,7 @@ export async function listWallets(
           mnemonic: true,
         },
       });
-      WALLETS.set(userId, {
+      WalletsState.set(userId, {
         wallets: cacheWallets,
         lastUpdater: new Date().getTime(),
       });

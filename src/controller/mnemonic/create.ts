@@ -6,7 +6,8 @@ import { state } from "../../lib/state";
 export async function createMnemonic(
   userId: number,
   text: string,
-  sendMessage: (message: string) => void
+  sendMessage: (message: string) => void,
+  secret: string
 ) {
   try {
     const currentUserState = state.get(userId);
@@ -15,7 +16,7 @@ export async function createMnemonic(
       return;
     }
     const generatedMnemonic = generateMnemonic();
-    const encryptedMnemonic = encryptMessage(generatedMnemonic);
+    const encryptedMnemonic = encryptMessage(generatedMnemonic, secret);
     await prisma.mnemonic.create({
       data: {
         userId,

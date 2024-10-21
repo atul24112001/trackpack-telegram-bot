@@ -6,7 +6,7 @@ import { generateMnemonic, mnemonicToSeedSync } from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import nacl from "tweetnacl";
 import { Keypair } from "@solana/web3.js";
-import { WALLETS, state } from "../../lib/state";
+import { WalletsState, state } from "../../lib/state";
 
 const networkCodes = {
   Solana: "501",
@@ -15,7 +15,8 @@ const networkCodes = {
 export async function createWallet(
   userId: number,
   text: string,
-  sendMessage: (message: string) => void
+  sendMessage: (message: string) => void,
+  password: string
 ) {
   try {
     const currentUserState = state.get(userId);
@@ -97,7 +98,10 @@ export async function createWallet(
 
         sendMessage(
           mnemonics.reduce((prev, curr, index) => {
-            const _mnemonic = decryptMessage(JSON.parse(curr.mnemonic));
+            const _mnemonic = decryptMessage(
+              JSON.parse(curr.mnemonic),
+              password
+            );
             prev += `${index + 1}. ${_mnemonic}\n`;
             return prev;
           }, "Please enter the serial number of mnemonic you want to use.\n")
@@ -130,7 +134,8 @@ export async function createWallet(
       });
 
       const mnemonicString = decryptMessage(
-        JSON.parse(targetMnemonic.mnemonic)
+        JSON.parse(targetMnemonic.mnemonic),
+        password
       );
       const seed = mnemonicToSeedSync(mnemonicString);
       let publicKey: string | null = null;
@@ -150,7 +155,9 @@ export async function createWallet(
         const wallet = await prisma.wallet.create({
           data: {
             network,
-            privateKey: JSON.stringify(encryptMessage(JSON.stringify(secret))),
+            privateKey: JSON.stringify(
+              encryptMessage(JSON.stringify(secret), password)
+            ),
             publicKey,
             type,
             mnemonicId: targetMnemonic.id,
@@ -162,9 +169,9 @@ export async function createWallet(
           },
         });
         sendMessage(`Wallet created successfully\n\nAddress: ${publicKey}`);
-        const walletCache = WALLETS.get(userId);
+        const walletCache = WalletsState.get(userId);
         if (walletCache) {
-          WALLETS.set(userId, {
+          WalletsState.set(userId, {
             lastUpdater: new Date().getTime(),
             wallets: [...walletCache.wallets, wallet],
           });

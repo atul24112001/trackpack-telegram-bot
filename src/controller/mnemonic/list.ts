@@ -1,13 +1,14 @@
 import { generateMnemonic } from "bip39";
 import { decryptMessage, encryptMessage } from "../../lib/function";
 import { prisma } from "../../lib/db";
+import { Passwords } from "../../lib/state";
 
 export async function listMnemonic(
   userId: number,
   text: string,
-  sendMessage: (message: string) => void
+  sendMessage: (message: string) => void,
+  secret: string
 ) {
-  console.log(text);
   try {
     const mnemonics = await prisma.mnemonic.findMany({
       where: {
@@ -20,7 +21,10 @@ export async function listMnemonic(
     } else {
       let message = "";
       mnemonics.forEach((encryptedMnemonic, index) => {
-        const mnemonic = decryptMessage(JSON.parse(encryptedMnemonic.mnemonic));
+        const mnemonic = decryptMessage(
+          JSON.parse(encryptedMnemonic.mnemonic),
+          secret
+        );
         message += `Name: ${encryptedMnemonic.name}\nMnemonic: ${mnemonic}\n\n`;
       });
       sendMessage(message);
