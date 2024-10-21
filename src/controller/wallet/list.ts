@@ -23,6 +23,11 @@ export async function listWallets(
       });
     }
 
+    if (cacheWallets.length === 0) {
+      sendMessage("No wallet yet! add one /create or /import");
+      return;
+    }
+
     sendMessage(
       cacheWallets.reduce((prev, curr, index) => {
         prev += `Name: ${curr.name}\nPublic Key: ${curr.publicKey}\nMnemonic:${curr.mnemonic.name}\n\n`;
