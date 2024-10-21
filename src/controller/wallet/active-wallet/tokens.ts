@@ -17,6 +17,10 @@ export async function getTokens(
   const network = Networks[activeWallet.network];
 
   const tokens = await network.getTokens(activeWallet.publicKey);
+  if (tokens.length === 0) {
+    sendMessage("No tokens found in your wallet");
+    return;
+  }
   sendMessage(
     tokens.reduce((prev, curr) => {
       prev += `Name: ${curr.metadata.name}\nBalance: ${

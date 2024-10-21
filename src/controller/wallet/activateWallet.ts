@@ -1,10 +1,15 @@
+import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { prisma } from "../../lib/db";
 import { ActiveWallets, WalletsState, state } from "../../lib/state";
 
 export async function activateWallet(
   userId: number,
   text: string,
-  sendMessage: (message: string, pin?: boolean) => void
+  sendMessage: (
+    message: string,
+    pin?: boolean,
+    buttons?: InlineKeyboardButton[][]
+  ) => void
 ) {
   const currentUserState = state.get(userId);
   const lastUpdated = new Date().getTime();
@@ -27,10 +32,10 @@ export async function activateWallet(
       );
       return;
     }
-    let message = wallets.reduce((prev, curr) => {
-      prev += `Name: ${curr.name}\nPublicKey: ${curr.publicKey}\n\n`;
-      return prev;
-    }, "Enter the serial number wallet you want to activate\n\n");
+    // let message = wallets.reduce((prev, curr) => {
+    //   prev += `Name: ${curr.name}\nPublicKey: ${curr.publicKey}\n\n`;
+    //   return prev;
+    // }, "Enter the serial number wallet you want to activate\n\n");
     state.set(userId, {
       creatingMnemonic: null,
       creatingWallet: null,
@@ -42,7 +47,17 @@ export async function activateWallet(
         wallets: wallets.map((wallet) => wallet.id),
       },
     });
-    sendMessage(message);
+    // sendMessage(message);
+    sendMessage(
+      "Please select the wallet you want to activate",
+      false,
+      wallets.map((wallet, index) => [
+        {
+          text: wallet.name,
+          switch_inline_query_current_chat: `${index + 1}`,
+        },
+      ])
+    );
     return;
   }
 

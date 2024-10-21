@@ -7,6 +7,7 @@ import { derivePath } from "ed25519-hd-key";
 import nacl from "tweetnacl";
 import { Keypair } from "@solana/web3.js";
 import { WalletsState, state } from "../../lib/state";
+import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 
 const networkCodes = {
   Solana: "501",
@@ -15,9 +16,22 @@ const networkCodes = {
 export async function createWallet(
   userId: number,
   text: string,
-  sendMessage: (message: string) => void,
+  sendMessage: (
+    message: string,
+    pin?: boolean,
+    buttons?: InlineKeyboardButton[][]
+  ) => void,
   password: string
 ) {
+  const textArray = text
+    .trim()
+    .split(" ")
+    .filter((word) => word.trim() !== "");
+
+  let targetText = textArray[0];
+  if (targetText === "@TrackpackDevBot") {
+    targetText = textArray[1];
+  }
   try {
     const currentUserState = state.get(userId);
     if (!currentUserState || !currentUserState.creatingWallet) {
@@ -40,13 +54,23 @@ export async function createWallet(
         creatingMnemonic: null,
         mnemonics: currentUserState.mnemonics,
       });
-      sendMessage(
-        "Grate now please select a network type:\n 1. Solana\n 2. Ethereum"
-      );
+      sendMessage("Grate now please select a network type\n\n", false, [
+        [
+          {
+            text: "Solana",
+            switch_inline_query_current_chat: "Solana",
+          },
+          {
+            text: "Ethereum",
+            switch_inline_query_current_chat: "Ethereum",
+          },
+        ],
+      ]);
+
       return;
     }
     if (!network) {
-      if (text !== "Solana") {
+      if (targetText !== "Solana") {
         sendMessage(
           "Sorry, We are not supporting this network, please select from other options"
         );
@@ -54,7 +78,7 @@ export async function createWallet(
         state.set(userId, {
           creatingWallet: {
             ...currentUserState.creatingWallet,
-            network: text,
+            network: targetText,
             type: null,
           },
           creatingMnemonic: null,
@@ -63,13 +87,26 @@ export async function createWallet(
           mnemonics: currentUserState.mnemonics,
         });
         sendMessage(
-          "Grate, now what type of wallet you want to create ??\n 1. SingleChain\n 2.MultiChain"
+          "Grate, now what type of wallet you want to create ??\n",
+          false,
+          [
+            [
+              {
+                text: "SingleChain",
+                switch_inline_query_current_chat: "SingleChain",
+              },
+              {
+                text: "MultiChain",
+                switch_inline_query_current_chat: "MultiChain",
+              },
+            ],
+          ]
         );
       }
       return;
     }
     if (!type) {
-      if (text === "MultiChain" || text === "SingleChain") {
+      if (targetText === "MultiChain" || targetText === "SingleChain") {
         const mnemonics = await prisma.mnemonic.findMany({
           where: {
             userId,

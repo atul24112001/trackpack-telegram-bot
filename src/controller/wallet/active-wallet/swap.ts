@@ -152,7 +152,7 @@ export async function swap(
     }
 
     if (!currentBalance) {
-      sendMessage("Token not found");
+      sendMessage("Insufficient balance or Invalid token");
       return;
     }
     if (amountOfTokenToSell && currentBalance < BigInt(amountOfTokenToSell)) {
