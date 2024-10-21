@@ -29,7 +29,10 @@ export async function createWallet(
     .filter((word) => word.trim() !== "");
 
   let targetText = textArray[0];
-  if (targetText === "@TrackpackDevBot") {
+  if (
+    targetText === "@TrackpackDevBot" ||
+    targetText === "@TrackpackVaultbot"
+  ) {
     targetText = textArray[1];
   }
   try {
