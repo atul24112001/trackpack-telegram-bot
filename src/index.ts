@@ -83,7 +83,7 @@ bot.on(message("text"), async (ctx) => {
     .split(" ")
     .filter((word) => word.trim() !== "");
   let text = textArray[0];
-  if (text === "@TrackpackDevBot") {
+  if (text === "@TrackpackDevBot" || text === "@TrackpackVaultbot") {
     text = textArray[1];
   }
 
