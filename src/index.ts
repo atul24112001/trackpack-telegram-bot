@@ -276,13 +276,13 @@ cron.schedule("0 * * * *", () => {
       state.delete(key);
     }
   });
-  WalletsState.forEach((value: any, key) => {
+  WalletsState.forEach((value, key) => {
     if (value.lastUpdater < currentTime - 3600000) {
       WalletsState.delete(key);
     }
   });
-  Passwords.forEach((value: any, key) => {
-    if (value.lastUpdater < currentTime - 3600000) {
+  Passwords.forEach((value, key) => {
+    if (value.lastUpdated < currentTime - 3600000) {
       Passwords.delete(key);
     }
   });
