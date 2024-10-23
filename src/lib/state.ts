@@ -52,7 +52,10 @@ export const WalletsState = new Map<
   }
 >();
 
-export const ActiveWallets = new Map<number, WalletModel>();
+export const ActiveWallets = new Map<
+  number,
+  { lastUpdated: number; wallet: WalletModel }
+>();
 export const ActiveToken = new Map<number, string>();
 export const Swaps = new Map<
   number,

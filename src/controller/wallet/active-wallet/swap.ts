@@ -37,7 +37,7 @@ export async function swap(
   password: string
 ) {
   let currentState = state.get(userId);
-  const activeWallet = ActiveWallets.get(userId);
+  const activeWallet = ActiveWallets.get(userId)?.wallet;
   if (!currentState) {
     currentState = {
       creatingMnemonic: null,

@@ -85,7 +85,10 @@ export async function activateWallet(
       sendMessage("Wallet not found");
       return;
     }
-    ActiveWallets.set(userId, activeWallet);
+    ActiveWallets.set(userId, {
+      lastUpdated: new Date().getTime(),
+      wallet: activeWallet,
+    });
     state.delete(userId);
     sendMessage(`Active Wallet: ${activeWallet.publicKey}`, true);
     sendMessage(

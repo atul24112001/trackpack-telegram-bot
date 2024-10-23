@@ -58,6 +58,7 @@ const commands: { [key: string]: string | { [key: string]: string } } = {
   createmnemonic: "To create a new mnemonic for you",
   mnemonics: "Lists all the mnemonics that you have added",
   activate: "Activate one of created wallet",
+  cancel: "Reset state & process",
   wallet: {
     balance: "Check balance in activate wallet",
     tokens: "Lists tokens/coins in active",
@@ -89,7 +90,7 @@ bot.on(message("text"), async (ctx) => {
 
   const userId = ctx.from.id;
   const lastUpdated = new Date().getTime();
-  const _activateWallet = ActiveWallets.get(userId);
+  const _activateWallet = ActiveWallets.get(userId)?.wallet;
   const password = Passwords.get(userId);
   const currentUserState = state.get(userId) || {
     creatingWallet: null,
@@ -284,6 +285,11 @@ cron.schedule("0 * * * *", () => {
   Passwords.forEach((value, key) => {
     if (value.lastUpdated < currentTime - 3600000) {
       Passwords.delete(key);
+    }
+  });
+  ActiveWallets.forEach((value, key) => {
+    if (value.lastUpdated < currentTime - 3600000) {
+      ActiveWallets.delete(key);
     }
   });
 });

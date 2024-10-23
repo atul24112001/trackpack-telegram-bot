@@ -7,7 +7,7 @@ export async function checkBalance(
   text: string,
   sendMessage: (message: string) => void
 ) {
-  const activeWallet = ActiveWallets.get(userId);
+  const activeWallet = ActiveWallets.get(userId)?.wallet;
   if (!activeWallet) {
     sendMessage("Please activate a wallet and try again");
     await activateWallet(userId, text, sendMessage);
