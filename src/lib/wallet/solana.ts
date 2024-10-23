@@ -42,7 +42,6 @@ export async function getTokenByAddress(address: string) {
       return token.address === address;
     }) || null
   );
-  return null;
 }
 
 export async function getTokens(publicKey: string) {
@@ -119,6 +118,7 @@ export async function getTokenBalance(publicKey: string, tokenAddress: string) {
     const balance = tokenAccount.amount;
     return balance;
   } catch (error) {
+    console.log(error);
     return null;
   }
 }
@@ -129,7 +129,7 @@ export async function initiateTransaction(
   password: string
 ) {
   const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
-  var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+  const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
   const secret = new Uint8Array(
     JSON.parse(decryptMessage(JSON.parse(privateKey), password))
   );

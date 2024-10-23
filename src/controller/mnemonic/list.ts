@@ -1,7 +1,5 @@
-import { generateMnemonic } from "bip39";
-import { decryptMessage, encryptMessage } from "../../lib/function";
+import { decryptMessage } from "../../lib/function";
 import { prisma } from "../../lib/db";
-import { Passwords } from "../../lib/state";
 
 export async function listMnemonic(
   userId: number,
@@ -20,7 +18,7 @@ export async function listMnemonic(
       sendMessage("No mnemonic yet! try /create_mnemonic or /import_mnemonic");
     } else {
       let message = "";
-      mnemonics.forEach((encryptedMnemonic, index) => {
+      mnemonics.forEach((encryptedMnemonic) => {
         const mnemonic = decryptMessage(
           JSON.parse(encryptedMnemonic.mnemonic),
           secret

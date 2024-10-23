@@ -13,18 +13,14 @@ import {
   Passwords,
   Swaps,
   WalletsState,
-  state,
+  State,
 } from "./lib/state";
 import cron from "node-cron";
 import { activateWallet } from "./controller/wallet/activateWallet";
 import { checkBalance } from "./controller/wallet/active-wallet/balance";
 import { getTokens } from "./controller/wallet/active-wallet/tokens";
-import { inlineKeyboard } from "telegraf/typings/markup";
 import { swap } from "./controller/wallet/active-wallet";
-import {
-  InlineKeyboardButton,
-  InlineKeyboardMarkup,
-} from "telegraf/typings/core/types/typegram";
+import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 
 config();
 
@@ -66,12 +62,10 @@ const commands: { [key: string]: string | { [key: string]: string } } = {
   },
 };
 
-bot.on("callback_query", (ctx) => {
-  //@ts-ignore
-  const callbackData = ctx.callbackQuery.data;
-  const userId = ctx.callbackQuery.from.id;
-  ctx.sendMessage(callbackData);
-});
+// bot.on("callback_query", (ctx) => {
+//   const callbackData = ctx.callbackQuery.data;
+//   ctx.sendMessage(callbackData);
+// });
 
 bot.on(message("text"), async (ctx) => {
   if (ctx.from.is_bot) {
@@ -92,7 +86,7 @@ bot.on(message("text"), async (ctx) => {
   const lastUpdated = new Date().getTime();
   const _activateWallet = ActiveWallets.get(userId)?.wallet;
   const password = Passwords.get(userId);
-  const currentUserState = state.get(userId) || {
+  const currentUserState = State.get(userId) || {
     creatingWallet: null,
     importMnemonics: null,
     lastUpdated,
@@ -101,14 +95,7 @@ bot.on(message("text"), async (ctx) => {
   };
 
   if (ctx.text === "/cancel") {
-    state.set(userId, {
-      creatingWallet: null,
-      importMnemonics: null,
-      lastUpdated,
-      mnemonics: null,
-      creatingMnemonic: null,
-    });
-
+    State.delete(userId);
     Passwords.delete(userId);
     ActiveWallets.delete(userId);
     Swaps.delete(userId);
@@ -125,13 +112,13 @@ bot.on(message("text"), async (ctx) => {
       lastUpdated: new Date().getTime(),
       password: text.trim(),
     });
-    state.delete(userId);
+    State.delete(userId);
     await ctx.deleteMessage(ctx.message.message_id);
     reply("Welcome");
     return;
   }
   if (!password) {
-    state.set(userId, {
+    State.set(userId, {
       ...currentUserState,
       enteringPassword: true,
     });
@@ -181,7 +168,7 @@ bot.on(message("text"), async (ctx) => {
   }
 
   if (text === "/create") {
-    state.set(userId, {
+    State.set(userId, {
       creatingWallet: {
         name: null,
         network: null,
@@ -202,7 +189,7 @@ bot.on(message("text"), async (ctx) => {
   }
   if (text === "/createmnemonic") {
     reply("Please give a name to the mnemonic");
-    state.set(userId, {
+    State.set(userId, {
       ...currentUserState,
       lastUpdated,
       creatingMnemonic: {
@@ -214,7 +201,7 @@ bot.on(message("text"), async (ctx) => {
   }
   if (text === "/importmnemonic") {
     reply("Please give a name to the mnemonic");
-    state.set(userId, {
+    State.set(userId, {
       ...currentUserState,
       lastUpdated,
       importMnemonics: {
@@ -272,9 +259,10 @@ process.once("SIGTERM", () => bot.stop("SIGTERM"));
 cron.schedule("0 * * * *", () => {
   console.log("Running the task every hour:", new Date().toLocaleString());
   const currentTime = new Date().getTime();
-  state.forEach((value, key) => {
+
+  State.forEach((value, key) => {
     if (value.lastUpdated < currentTime - 3600000) {
-      state.delete(key);
+      State.delete(key);
     }
   });
   WalletsState.forEach((value, key) => {

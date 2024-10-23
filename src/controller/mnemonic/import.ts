@@ -1,6 +1,6 @@
 import { encryptMessage } from "../../lib/function";
 import { prisma } from "../../lib/db";
-import { state } from "../../lib/state";
+import { State } from "../../lib/state";
 
 export async function importMnemonic(
   userId: number,
@@ -9,8 +9,8 @@ export async function importMnemonic(
   secret: string
 ) {
   try {
-    const currentUserState = state.get(userId);
-    const { mnemonic, name } = currentUserState?.importMnemonics || {};
+    const currentUserState = State.get(userId);
+    const { name } = currentUserState?.importMnemonics || {};
 
     const lastUpdated = new Date().getTime();
     if (!name) {
@@ -18,7 +18,7 @@ export async function importMnemonic(
         sendMessage("Name should contain at least 5 letters");
         return;
       }
-      state.set(userId, {
+      State.set(userId, {
         creatingWallet: null,
         importMnemonics: {
           name: text,
@@ -52,7 +52,7 @@ export async function importMnemonic(
       },
     });
     if (currentUserState) {
-      state.set(userId, {
+      State.set(userId, {
         ...currentUserState,
         importMnemonics: null,
       });

@@ -1,6 +1,6 @@
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { prisma } from "../../lib/db";
-import { ActiveWallets, WalletsState, state } from "../../lib/state";
+import { ActiveWallets, WalletsState, State } from "../../lib/state";
 
 export async function activateWallet(
   userId: number,
@@ -11,7 +11,7 @@ export async function activateWallet(
     buttons?: InlineKeyboardButton[][]
   ) => void
 ) {
-  const currentUserState = state.get(userId);
+  const currentUserState = State.get(userId);
   const lastUpdated = new Date().getTime();
 
   if (!currentUserState?.activateWallet) {
@@ -36,7 +36,7 @@ export async function activateWallet(
     //   prev += `Name: ${curr.name}\nPublicKey: ${curr.publicKey}\n\n`;
     //   return prev;
     // }, "Enter the serial number wallet you want to activate\n\n");
-    state.set(userId, {
+    State.set(userId, {
       creatingMnemonic: null,
       creatingWallet: null,
       importMnemonics: null,
@@ -89,7 +89,7 @@ export async function activateWallet(
       lastUpdated: new Date().getTime(),
       wallet: activeWallet,
     });
-    state.delete(userId);
+    State.delete(userId);
     sendMessage(`Active Wallet: ${activeWallet.publicKey}`, true);
     sendMessage(
       `Wallet naming ${activeWallet.name} is active now you can running commands like:\n\n/balance - Get current balance\n/tokens - Get all tokens & their balance\n/swap - To swap tokens`

@@ -29,7 +29,7 @@ export async function listWallets(
     }
 
     sendMessage(
-      cacheWallets.reduce((prev, curr, index) => {
+      cacheWallets.reduce((prev, curr) => {
         prev += `Name: ${curr.name}\nPublic Key: ${curr.publicKey}\nMnemonic:${curr.mnemonic.name}\n\n`;
         return prev;
       }, "Your wallets\n\n")

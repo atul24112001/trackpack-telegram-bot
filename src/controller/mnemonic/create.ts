@@ -1,7 +1,7 @@
 import { generateMnemonic } from "bip39";
 import { encryptMessage } from "../../lib/function";
 import { prisma } from "../../lib/db";
-import { state } from "../../lib/state";
+import { State } from "../../lib/state";
 
 export async function createMnemonic(
   userId: number,
@@ -10,7 +10,7 @@ export async function createMnemonic(
   secret: string
 ) {
   try {
-    const currentUserState = state.get(userId);
+    const currentUserState = State.get(userId);
     if (text.trim().length < 5) {
       sendMessage("Name should contain at least 5 letters");
       return;
@@ -25,7 +25,7 @@ export async function createMnemonic(
       },
     });
     if (currentUserState) {
-      state.set(userId, {
+      State.set(userId, {
         ...currentUserState,
         creatingMnemonic: null,
       });

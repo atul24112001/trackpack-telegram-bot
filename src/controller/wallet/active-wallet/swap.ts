@@ -1,5 +1,5 @@
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
-import { ActiveWallets, Swaps, state } from "../../../lib/state";
+import { ActiveWallets, Swaps, State } from "../../../lib/state";
 import { Networks } from "../../../lib/wallet";
 import { activateWallet } from "../activateWallet";
 import axios from "axios";
@@ -36,7 +36,7 @@ export async function swap(
   ) => void,
   password: string
 ) {
-  let currentState = state.get(userId);
+  let currentState = State.get(userId);
   const activeWallet = ActiveWallets.get(userId)?.wallet;
   if (!currentState) {
     currentState = {
@@ -54,7 +54,7 @@ export async function swap(
   }
 
   if (text === "cancel") {
-    state.set(userId, {
+    State.set(userId, {
       ...currentState,
       swapping: undefined,
     });
@@ -68,7 +68,7 @@ export async function swap(
       false,
       Buttons
     );
-    state.set(userId, {
+    State.set(userId, {
       ...currentState,
       swapping: {
         sellingToken: null,
@@ -88,7 +88,7 @@ export async function swap(
       sendMessage("Token not found please enter correct address");
       return;
     }
-    state.set(userId, {
+    State.set(userId, {
       ...currentState,
       swapping: {
         sellingToken: {
@@ -117,7 +117,7 @@ export async function swap(
       sendMessage("Token not found please enter correct address");
       return;
     }
-    state.set(userId, {
+    State.set(userId, {
       ...currentState,
       swapping: {
         ...currentState.swapping,
@@ -159,7 +159,7 @@ export async function swap(
       return sendMessage("Insufficient balance");
     }
 
-    state.set(userId, {
+    State.set(userId, {
       ...currentState,
       swapping: {
         ...currentState.swapping,
@@ -198,7 +198,7 @@ export async function swap(
       }
     }
     Swaps.delete(userId);
-    state.delete(userId);
+    State.delete(userId);
     return;
   }
 

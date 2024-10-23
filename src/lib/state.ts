@@ -1,6 +1,6 @@
-import { Mnemonic, Network, User, Wallet, WalletType } from "@prisma/client";
+import { Mnemonic, Network, Wallet, WalletType } from "@prisma/client";
 
-export const state = new Map<
+export const State = new Map<
   number,
   {
     lastUpdated: number;

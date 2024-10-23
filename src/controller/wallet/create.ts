@@ -1,12 +1,11 @@
-import { Mnemonic, WalletType } from "@prisma/client";
+import { WalletType } from "@prisma/client";
 import { prisma } from "../../lib/db";
-import { createMnemonic, importMnemonic, listMnemonic } from "../mnemonic";
 import { decryptMessage, encryptMessage } from "../../lib/function";
-import { generateMnemonic, mnemonicToSeedSync } from "bip39";
+import { mnemonicToSeedSync } from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import nacl from "tweetnacl";
 import { Keypair } from "@solana/web3.js";
-import { WalletsState, state } from "../../lib/state";
+import { WalletsState, State } from "../../lib/state";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 
 const networkCodes = {
@@ -36,7 +35,7 @@ export async function createWallet(
     targetText = textArray[1];
   }
   try {
-    const currentUserState = state.get(userId);
+    const currentUserState = State.get(userId);
     if (!currentUserState || !currentUserState.creatingWallet) {
       sendMessage("Something went wrong");
       return;
@@ -45,7 +44,7 @@ export async function createWallet(
     const lastUpdated = new Date().getTime();
 
     if (!name) {
-      state.set(userId, {
+      State.set(userId, {
         creatingWallet: {
           name: text,
           network: null,
@@ -78,7 +77,7 @@ export async function createWallet(
           "Sorry, We are not supporting this network, please select from other options"
         );
       } else {
-        state.set(userId, {
+        State.set(userId, {
           creatingWallet: {
             ...currentUserState.creatingWallet,
             network: targetText,
@@ -116,7 +115,7 @@ export async function createWallet(
           },
         });
 
-        state.set(userId, {
+        State.set(userId, {
           creatingWallet: {
             ...currentUserState.creatingWallet,
             type:
@@ -132,7 +131,7 @@ export async function createWallet(
 
         if (mnemonics.length === 0) {
           sendMessage("Please generate or import mnemonics first.");
-          state.delete(userId);
+          State.delete(userId);
           return;
         }
 
@@ -216,7 +215,7 @@ export async function createWallet(
             wallets: [...walletCache.wallets, wallet],
           });
         }
-        state.set(userId, {
+        State.set(userId, {
           creatingMnemonic: null,
           creatingWallet: null,
           importMnemonics: null,
