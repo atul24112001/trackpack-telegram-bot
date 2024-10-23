@@ -32,10 +32,7 @@ export async function activateWallet(
       );
       return;
     }
-    // let message = wallets.reduce((prev, curr) => {
-    //   prev += `Name: ${curr.name}\nPublicKey: ${curr.publicKey}\n\n`;
-    //   return prev;
-    // }, "Enter the serial number wallet you want to activate\n\n");
+
     State.set(userId, {
       creatingMnemonic: null,
       creatingWallet: null,
@@ -47,7 +44,6 @@ export async function activateWallet(
         wallets: wallets.map((wallet) => wallet.id),
       },
     });
-    // sendMessage(message);
     sendMessage(
       "Please select the wallet you want to activate",
       false,

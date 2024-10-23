@@ -1,6 +1,9 @@
 import { config } from "dotenv";
 import { Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
+import cron from "node-cron";
+import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
+
 import { prisma } from "./lib/db";
 import {
   importMnemonic,
@@ -15,12 +18,12 @@ import {
   WalletsState,
   State,
 } from "./lib/state";
-import cron from "node-cron";
-import { activateWallet } from "./controller/wallet/activateWallet";
-import { checkBalance } from "./controller/wallet/active-wallet/balance";
-import { getTokens } from "./controller/wallet/active-wallet/tokens";
-import { swap } from "./controller/wallet/active-wallet";
-import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
+import {
+  activateWallet,
+  checkBalance,
+  getTokens,
+  swap,
+} from "./controller/wallet";
 
 config();
 
@@ -114,7 +117,7 @@ bot.on(message("text"), async (ctx) => {
     });
     State.delete(userId);
     await ctx.deleteMessage(ctx.message.message_id);
-    reply("Welcome");
+    reply("Welcome " + ctx.from.first_name);
     return;
   }
   if (!password) {
